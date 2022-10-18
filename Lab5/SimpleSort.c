@@ -63,7 +63,7 @@ int MPI_Sort_ranking(int n, double * a, double * b, double max, int root, MPI_Co
 	overallRanking = (int*) calloc(n, sizeof(int));
 
 	// Brodcast the array to the processor
-	MPI_Bcast(&a[0], n, MPI_DOUBLE, root, comm);
+	MPI_Bcast(a, n, MPI_DOUBLE, root, comm);
 
 	// P rank generates an array ranking with ranking[i] is the rank of a[i+rank*n/size] in the array
 	for ( int i = 0; i < n/size; i++) {
@@ -73,7 +73,7 @@ int MPI_Sort_ranking(int n, double * a, double * b, double max, int root, MPI_Co
 	}
 
 	// Gather the array ranking to finalRanking
-	MPI_Gather(&ranking[0], n / size, MPI_DOUBLE, &overallRanking, n / size, MPI_DOUBLE, root, comm);
+	MPI_Gather(ranking, n / size, MPI_DOUBLE, overallRanking, n / size, MPI_DOUBLE, root, comm);
 
 	// if processor 0 then restore the order in the array b and move b back to a
 	if (rank == 0) {
