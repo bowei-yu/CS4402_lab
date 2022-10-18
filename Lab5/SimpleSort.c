@@ -55,8 +55,8 @@ int MPI_Sort_ranking(int n, double * a, double * b, double max, int root, MPI_Co
 	
 	// find rank and size
 	int rank, size, *ranking, *overallRanking;
-	MPI_Comm_size(comm, &size);
 	MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
 
 	// allocate the extra memory / arrays needed
 	ranking = (int*) calloc(n/size, sizeof(int));
@@ -67,9 +67,8 @@ int MPI_Sort_ranking(int n, double * a, double * b, double max, int root, MPI_Co
 
 	// P rank generates an array ranking with ranking[i] is the rank of a[i+rank*n/size] in the array
 	for ( int i = 0; i < n/size; i++) {
-		int j;
-		for (ranking[i] = j = 0; j < n; j++)
-			if (a[j] > a[i + rank * n/size]) ranking++;
+		for (int j = ranking[i] = 0; j < n; j++)
+			if (a[j] > a[i + rank * n/size]) ranking[i]++;
 	}
 
 	// Gather the array ranking to finalRanking
