@@ -61,13 +61,13 @@ int main (int argc, char *argv[])
 	   if( isReciever( rank, size, level ) && level > 0 )
 	   {
 	      // receive the elements from the parent node
-            MPI_Recv(a, n/(int) pow(2, level), MPI_INT, rank - size/(int) pow(2, level), 0, MPI_COMM_WORLD, &status);
+            MPI_Recv(a, n/(int) pow(2, level), MPI_DOUBLE, rank - size/(int) pow(2, level), 0, MPI_COMM_WORLD, &status);
 	   }
 	   //if is Active  ,
 	   if( isActive( rank, size, level ) && level < q )
 	   {
 	      // send half of the elements to the right child node
-          MPI_Send(&a[n/(int) pow(2, level + 1)], n/(int) pow(2, level + 1), MPI_INT, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD);
+          MPI_Send(&a[n/(int) pow(2, level + 1)], n/(int) pow(2, level + 1), MPI_DOUBLE, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD);
 	   }
 	}
 
@@ -85,13 +85,13 @@ int main (int argc, char *argv[])
 	   if( isActive( rank, size, level ) && level < q )
 	   {
 	      // receive the elements from the right child in the array b and then merge a with b
-          MPI_Recv(b, n/(int) pow(2, level), MPI_INT, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD, &status);
-          a = merge_array( n/(int) pow(2, level), a,  n/(int) pow(2, level), b);
+          MPI_Recv(b, n/(int) pow(2, level + 1), MPI_DOUBLE, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD, &status);
+          a = merge_array( n/(int) pow(2, level + 1), a,  n/(int) pow(2, level + 1), b);
 	   }
 	   if( isSender( rank, size, level ) && level > 0 )
 	   {
 	      // send the elements to the parent node.
-          MPI_Send(a, n/(int) pow(2, level - 1), MPI_INT, rank - size/(int) pow(2, level), 0, MPI_COMM_WORLD);
+          MPI_Send(a, n/(int) pow(2, level), MPI_DOUBLE, rank - size/(int) pow(2, level), 0, MPI_COMM_WORLD);
 	   }
 	}
 
