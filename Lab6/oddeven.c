@@ -9,6 +9,7 @@
     //MPI methods
     int MPI_Exchange( int n, double * array, int rank1, int rank2, MPI_Comm comm );
     int MPI_Sort_oddeven( int n, double * array, int root, MPI_Comm comm );
+    int MPI_Is_sorted(int n, double * array, int * answer, int root, MPI_Comm comm);
      
     //all in previous labs
     double * merge( int n, double * array, int m, double * b );
@@ -95,12 +96,56 @@
                 if( rank > 0 ) MPI_Exchange(n/size,localArray,rank-1,rank,MPI_COMM_WORLD);
             }
             MPI_Barrier(MPI_COMM_WORLD);
+
+            // test if overall array is sorted and break if required
+            int answer;
+            // gather all first and last of each array from each processor and do a comparison
+            MPI_Is_sorted(n/size, localArray, &answer, root, comm);
+
+            if (answer == 1) {
+              if (rank == root) {
+                printf("Odd even finished in %d operations\n", i + 1);
+              }
+              break;
+            }
         }
 
      
       //gather local_a
         MPI_Gather( localArray, n/size, MPI_DOUBLE, array, n/size, MPI_DOUBLE, 0, MPI_COMM_WORLD );
       
+    }
+
+    int MPI_Is_sorted(int n, double * array, int * answer, int root, MPI_Comm comm) {
+      // get rank and size
+      int rank, size;
+      MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+      MPI_Comm_size( MPI_COMM_WORLD, &size );
+
+      // allocate first and last with size elements
+      double * first = (double *) calloc(size, sizeof(double));
+      double * last = (double*) calloc(size, sizeof(double));
+      
+      // gather first and last
+      MPI_Gather(&array[0], 1, MPI_DOUBLE, first, 1, MPI_DOUBLE, root, comm);
+      MPI_Gather(&array[n-1], 1, MPI_DOUBLE, last, 1, MPI_DOUBLE, root, comm);
+      
+      // if rank is root then test
+      if (rank == root) {
+        *answer = 1;
+        for (int i = 1; i < size; i++) {
+          if (first[i] < last[i - 1]) { 
+            // first of cuurent processor is smaller than last of previous processor
+            // means not sorted, return 0
+            *answer = 0; break;
+          }
+        }
+      }
+
+      // bcast the answer
+      MPI_Bcast(answer, 1, MPI_INT, root, comm);
+
+      return MPI_SUCCESS;
     }
      
     int MPI_Exchange( int n, double * array, int rank1, int rank2, MPI_Comm comm ) {
