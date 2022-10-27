@@ -16,7 +16,7 @@ int main (int argc, char *argv[])
 
 	int rank, size;
 
-	int n = 32, q, level, i, j, k, x, *nr;
+	int n = 10000000, q, level, i, j, k, x, *nr;
 	double m = 10.0;
 	double *a, *b;
 
@@ -35,18 +35,19 @@ int main (int argc, char *argv[])
 	   //initialise the array with random values, then scatter to all processors
 	   srand( ((unsigned)time(NULL)+rank) );
 
-        printf("Initial: \n");
+        // printf("Initial: \n");
 	   for( x = 0; x < n; x++ )
 	   {
 	      a[x]=((double)rand()/RAND_MAX)*m;
-	      printf( "%f ", a[x] );
+	    //   printf( "%f ", a[x] );
 	   }
 
+	   printf("Sorting %d elements with %d processors\n", n, size);
 	}
 
 
 	//find what power of 2, the number of processors is..
-	//may cause errors if no of processors is not a exact power of 24
+	//may cause errors if no of processors is not a exact power of 2
 	q = 0;
 	while( size > ( pow(2,q ) ) )
 	{
@@ -54,7 +55,7 @@ int main (int argc, char *argv[])
 	}
 
 	// --------------- Stage 1: top-down -----------------------------
-
+	double time = MPI_Wtime();
 	for( level = 0; level <= q; level++ )
 	{
 	   //if is Reciever
@@ -70,12 +71,14 @@ int main (int argc, char *argv[])
           MPI_Send(&a[n/(int) pow(2, level + 1)], n/(int) pow(2, level + 1), MPI_DOUBLE, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD);
 	   }
 	}
+	double TComm = MPI_Wtime() - time;
 
 	// --------------- Stage 2: sort the arrays -----------------------------
 
-
+	time = MPI_Wtime();
 	//sequential sort the scattered array
     merge_sort(n/size,a);
+	double TComp = MPI_Wtime() - time;
 
 
 	// --------------- Stage 3: bottom-up -----------------------------
@@ -85,25 +88,35 @@ int main (int argc, char *argv[])
 	   if( isActive( rank, size, level ) && level < q )
 	   {
 	      // receive the elements from the right child in the array b and then merge a with b
-          MPI_Recv(b, n/(int) pow(2, level + 1), MPI_DOUBLE, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD, &status);
+          time = MPI_Wtime();
+		  MPI_Recv(b, n/(int) pow(2, level + 1), MPI_DOUBLE, rank + size/(int) pow(2, level + 1), 0, MPI_COMM_WORLD, &status);
+		  TComm = TComm + (MPI_Wtime() - time);
+
+		  time = MPI_Wtime();
           a = merge_array( n/(int) pow(2, level + 1), a,  n/(int) pow(2, level + 1), b);
+		  TComp = TComp + (MPI_Wtime() - time);
 	   }
 	   if( isSender( rank, size, level ) && level > 0 )
 	   {
 	      // send the elements to the parent node.
+		  time = MPI_Wtime();
           MPI_Send(a, n/(int) pow(2, level), MPI_DOUBLE, rank - size/(int) pow(2, level), 0, MPI_COMM_WORLD);
+		  TComm = TComm + (MPI_Wtime() - time);
 	   }
 	}
 
 
 	if( rank == 0 )
 	{   
-        printf("\nOutput: \n");
+        // printf("\nOutput: \n");
 	   for( x = 0; x < n; x++ )
 	   {
-	      printf( "%f ", a[x] );
+	    //   printf( "%f ", a[x] );
 	   }
 	}
+
+	printf("Processor %d takes %fs for TComm + %fs for TComp, Total time = %fs\n", rank, TComm, TComp, TComm + TComp);
+	
 	MPI_Finalize();
 
 }
