@@ -105,6 +105,8 @@ int main (int argc, char *argv[])
 	   }
 	}
 
+	printf("Processor %d takes %fs for TComm + %fs for TComp, Total time = %fs\n", rank, TComm, TComp, TComm + TComp);
+
 
 	if( rank == 0 )
 	{   
@@ -112,10 +114,9 @@ int main (int argc, char *argv[])
 	   for( x = 0; x < n; x++ )
 	   {
 	    //   printf( "%f ", a[x] );
+		//printf("Execution Time with %d procs is %lf", size, overallTime);
 	   }
 	}
-
-	printf("Processor %d takes %fs for TComm + %fs for TComp, Total time = %fs\n", rank, TComm, TComp, TComm + TComp);
 	
 	MPI_Finalize();
 
