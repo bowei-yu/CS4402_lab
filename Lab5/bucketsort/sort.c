@@ -56,7 +56,7 @@ int main (int argc, char *argv[])
 
     if(rank == 0) {
         // for(int i = 0; i < n; i++) printf("%lf \n", array[i]);
-        printf("Execution Time with %d procs is %lf", size, overallTime);
+        printf("Execution Time with %d procs is %lf\n", size, overallTime);
     }
     
 
@@ -93,6 +93,7 @@ int MPI_Sort_bucket(int n, double * a, double m, int root, MPI_Comm comm) {
     }
 
     // sort bucket
+    time =  MPI_Wtime();
     merge_sort(count, bucket);
     time = MPI_Wtime() - time;
     tcomp += time;
@@ -117,7 +118,7 @@ int MPI_Sort_bucket(int n, double * a, double m, int root, MPI_Comm comm) {
     time = MPI_Wtime() - time;
     tcomm += time;
 
-    printf("Exec time on proc %d: comm %lf comp %lf\n", rank, tcomm, tcomp);
+    printf("Exec time on proc %d: comm %f comp %f, total: %f\n", rank, tcomm, tcomp, tcomm + tcomp);
 
     return MPI_SUCCESS;
 
