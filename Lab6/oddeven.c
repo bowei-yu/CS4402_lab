@@ -48,10 +48,19 @@
       processorTime = MPI_Wtime( );
      
       //MPI_Sort does all the heavy work
+      // call and time evaluate MPI_Sort_direct
+      double time = MPI_Wtime();
+      double overallTime;
       result = MPI_Sort_oddeven( n, array, 0, MPI_COMM_WORLD );
       if( result != MPI_SUCCESS )
       {
         return result;
+      }
+      time = MPI_Wtime() - time;
+      MPI_Reduce(&time, &overallTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+      if(rank == 0) {
+          //for(int i = 0; i < n; i++) printf("%lf ", array[i]);
+          printf("\nExecution Time with %d procs is %lf\n", size, overallTime);
       }
      
       //get end time for each processor
@@ -113,6 +122,8 @@
      
       //gather local_a
         MPI_Gather( localArray, n/size, MPI_DOUBLE, array, n/size, MPI_DOUBLE, 0, MPI_COMM_WORLD );
+
+        return MPI_SUCCESS;
       
     }
 

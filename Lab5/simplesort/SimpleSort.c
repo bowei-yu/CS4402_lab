@@ -66,6 +66,7 @@ int MPI_Sort_ranking(int n, double * a, double * b, double max, int root, MPI_Co
 	MPI_Bcast(a, n, MPI_DOUBLE, root, comm);
 
 	// P rank generates an array ranking with ranking[i] is the rank of a[i+rank*n/size] in the array
+	// go through the whole array and increase the rank of number in localarray
 	for ( int i = 0; i < n/size; i++) {
 		for (int j = ranking[i] = 0; j < n; j++)
 			if (a[j] < a[i + rank * n/size]) ranking[i]++;
