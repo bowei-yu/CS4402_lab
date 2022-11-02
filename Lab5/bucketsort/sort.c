@@ -20,22 +20,22 @@ int MPI_Exchange( int n, double * array, int rank1, int rank2, MPI_Comm comm );
 int MPI_Sort_direct(int n, double * a, int root, MPI_Comm comm);
 int MPI_Sort_bucket(int n, double * a, double m, int root, MPI_Comm comm);
 int MPI_Sort_shell(int n, double * a, int root, MPI_Comm comm);
-int MPI_sort_bitonic(int n, double * a, int root, MPI_Comm comm);
+int MPI_Sort_bitonic(int n, double * a, int root, MPI_Comm comm);
 
 int main (int argc, char *argv[])
 {
 
 	int rank, size;
 
-	int n = 10000000, i, j, k, x, q, l, shell, pair, *nr;
+	int n = 16, i, j, k, x, q, l, shell, pair, *nr;
 	double m = 10.0;
 	double * scattered_array, * array;
 
 	// Init + rank + size
 	MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
-    array = (double *) calloc( n, sizeof(double) );
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &size);
+  array = (double *) calloc( n, sizeof(double) );
 
 	if( rank == 0 )
 	{
@@ -54,11 +54,11 @@ int main (int argc, char *argv[])
     // call and time evaluate MPI_Sort_direct
     double time = MPI_Wtime();
     double overallTime;
-    MPI_Sort_shell(n, array, 0, MPI_COMM_WORLD);
+    MPI_Sort_bitonic(n, array, 0, MPI_COMM_WORLD);
     time = MPI_Wtime() - time;
     MPI_Reduce(&time, &overallTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
     if(rank == 0) {
-        //for(int i = 0; i < n; i++) printf("%lf ", array[i]);
+        for(int i = 0; i < n; i++) printf("%lf ", array[i]);
         printf("\nExecution Time with %d procs is %lf\n", size, overallTime);
     }
     
@@ -68,6 +68,36 @@ int main (int argc, char *argv[])
 }
 
 // MPI Functions
+
+int MPI_Sort_bitonic(int n, double * a, int root, MPI_Comm comm) {
+    
+    int rank, size;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    double * localArray = (double *) calloc (n/size, sizeof(double));
+
+    int rc = MPI_Scatter(a, n / size, MPI_DOUBLE, localArray, n / size, MPI_DOUBLE, root, comm);
+    if(rc != MPI_SUCCESS) return rc;
+
+    merge_sort(n/size, localArray);
+
+    for (int d = 0; d < log2(size); d++) {
+      for (int i = d; i >= 0; i--) {
+        int pair = rank ^ (1 << i);
+        if (((rank >> (d + 1)) % 2 == 0 && (rank >> i) % 2 == 0) || ((rank >> (d + 1)) % 2 != 0 && (rank >> i) % 2 != 0)) {
+          MPI_Exchange(n/size, localArray, rank, pair, MPI_COMM_WORLD);
+        } else {
+          MPI_Exchange(n/size, localArray, pair, rank, MPI_COMM_WORLD);
+        }
+      }
+    }
+
+    rc = MPI_Gather(localArray, n / size, MPI_DOUBLE, a, n / size, MPI_DOUBLE, root, comm);
+    if(rc != MPI_SUCCESS) return rc;
+
+    return MPI_SUCCESS;
+}
 
 int MPI_Sort_shell(int n, double * a, int root, MPI_Comm comm) {
 
