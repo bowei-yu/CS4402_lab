@@ -50,7 +50,7 @@ int main (int argc, char *argv[])
 	{
 
 	   //initialise the array with random values, then scatter to all processors
-	    srand( ((unsigned)time(NULL)+rank) );
+	    srand( (100 + rank) );
 
         for( i = 0; i < n; i++ )
         {
