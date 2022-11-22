@@ -33,7 +33,7 @@ int main (int argc, char *argv[])
 	{
 
 	   //initialise the array with random values, then scatter to all processors
-	   srand( ((unsigned)time(NULL)+rank) );
+	   srand( (100+rank) );
 
         // printf("Initial: \n");
 	   for( x = 0; x < n; x++ )
@@ -42,9 +42,11 @@ int main (int argc, char *argv[])
 	    //   printf( "%f ", a[x] );
 	   }
 
-	   printf("Sorting %d elements with %d processors\n", n, size);
+	   printf("Sorting %d elements with %d processor(s)\n", n, size);
 	}
 
+	double totalTime = MPI_Wtime();
+    double overallTime;
 
 	//find what power of 2, the number of processors is..
 	//may cause errors if no of processors is not a exact power of 2
@@ -105,19 +107,27 @@ int main (int argc, char *argv[])
 	   }
 	}
 
-	printf("Processor %d takes %fs for TComm + %fs for TComp, Total time = %fs\n", rank, TComm, TComp, TComm + TComp);
+	printf("Processor %d takes %fs for TComm + %fs for TComp, Total (TComp + TComm) = %fs\n", rank, TComm, TComp, TComm + TComp);
 
+	totalTime = MPI_Wtime() - totalTime;
+    MPI_Reduce(&totalTime, &overallTime, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
 
 	if( rank == 0 )
 	{   
-        // printf("\nOutput: \n");
-	   for( x = 0; x < n; x++ )
-	   {
-	    //   printf( "%f ", a[x] );
-		//printf("Execution Time with %d procs is %lf", size, overallTime);
-	   }
+    // 	printf("\nOutput: \n");
+	//    for( x = 0; x < n; x++ )
+	//    {
+	//     printf( "%f ", a[x] );
+	//    }
+	   printf("\nExecution Time with %d procs is %lf\n\n", size, overallTime);
+	} else {
+		// for( x = 0; x < n; x++ )
+		//    {
+		//     printf( "%f ", a[x] );
+		//    }
+		// printf("\n");
 	}
-	
+
 	MPI_Finalize();
 
 }
