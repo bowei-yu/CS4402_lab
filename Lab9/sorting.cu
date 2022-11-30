@@ -39,6 +39,7 @@ __global__ void sortOnDevice2(int n, int * d_a, int * d_b){
     int threadId = threadIdx.x + blockIdx.x * blockDim.x;
 
     if(threadId<n){
+        // putting into a register
         int rank = 0, elem = d_a[threadId];
         for(int j=0;j<n;j++){
             if(elem>d_a[j])
@@ -52,6 +53,33 @@ __global__ void sortOnDevice2(int n, int * d_a, int * d_b){
 
 // shared memeory
 __global__ void sortOnDevice3(int n, int * d_a, int * d_b){
+
+    // iteration i computed by threadId
+    int threadId = threadIdx.x + blockIdx.x * blockDim.x;
+
+    // copy d_a to share_a
+    extern __shared__ int share_a[];
+
+    if(threadIdx.x < warpSize){
+        for(int i=threadIdx.x;i<n;i+=warpSize)
+            share_a[i] = d_a[i];
+    }
+    __syncthreads();
+
+    if(threadId<n){
+        int rank = 0, elem = share_a[threadId];
+        for(int j=0;j<n;j++){
+            if(elem>share_a[j])
+                rank++;
+        }
+        d_b[rank] = elem;
+
+    }
+
+}
+
+// shared memeory
+__global__ void oddevenSortOnDevice(int n, int * d_a, int * d_b){
 
     // iteration i computed by threadId
     int threadId = threadIdx.x + blockIdx.x * blockDim.x;
